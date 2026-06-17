@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookShelf – My Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --ink:#1A0A2E;--gold:#F5A623;--rose:#E8417A;
+      --teal:#0ABFBC;--lavender:#9B59B6;--page:#FFF8F0;
+      --card-bg:rgba(255,248,240,0.06);--border:rgba(255,248,240,0.12);
+    }
+    body{min-height:100vh;font-family:'Inter',sans-serif;background:var(--ink);color:var(--page);}
+ 
+    /* NAV */
+    nav{
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 40px;
+      background:rgba(26,10,46,0.85);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-brand{display:flex;align-items:center;gap:10px;}
+    .nav-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--rose));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .nav-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--page);}
+    .nav-name span{color:var(--gold);}
+    .nav-right{display:flex;align-items:center;gap:20px;}
+    .nav-search{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border);
+      border-radius:50px;padding:8px 16px;
+    }
+    .nav-search input{background:none;border:none;outline:none;color:var(--page);font-size:13px;width:180px;}
+    .nav-search input::placeholder{color:rgba(255,248,240,0.3);}
+    .btn-back{background:none;border:1px solid var(--border);border-radius:50px;padding:8px 18px;color:var(--page);font-size:13px;cursor:pointer;transition:all .2s;}
+    .btn-back:hover{border-color:var(--gold);color:var(--gold);}
+ 
+    /* HERO */
+    .hero{
+      text-align:center;padding:64px 40px 40px;
+      background:radial-gradient(ellipse at top,rgba(232,65,122,0.15) 0%,transparent 65%);
+    }
+    .hero h1{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;line-height:1.1;margin-bottom:12px;}
+    .hero h1 span{color:var(--gold);}
+    .hero p{font-size:16px;color:rgba(255,248,240,0.5);margin-bottom:32px;}
+ 
+    /* FILTER TABS */
+    .filters{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;padding:0 40px;}
+    .filter-btn{
+      padding:8px 20px;border-radius:50px;border:1.5px solid var(--border);
+      background:none;color:rgba(255,248,240,0.55);font-size:13px;font-weight:500;
+      cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;
+    }
+    .filter-btn:hover,.filter-btn.active{
+      background:linear-gradient(135deg,var(--gold),var(--rose));
+      border-color:transparent;color:#fff;
+    }
+ 
+    /* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:28px;padding:0 40px 80px;
+      max-width:1300px;margin:0 auto;
+    }
+ 
+    /* BOOK CARD */
+    .book-card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:16px;overflow:hidden;
+      cursor:pointer;
+      transition:transform .25s,box-shadow .25s,border-color .25s;
+      position:relative;
+    }
+    .book-card:hover{
+      transform:translateY(-8px);
+      box-shadow:0 20px 50px rgba(0,0,0,0.5);
+      border-color:rgba(245,166,35,0.4);
+    }
+    .book-cover{
+      width:100%;height:240px;object-fit:cover;display:block;
+      background:linear-gradient(135deg,var(--lavender),var(--rose));
+      position:relative;overflow:hidden;
+    }
+    .book-cover-placeholder{
+      width:100%;height:240px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;font-size:48px;
+      position:relative;
+    }
+    .book-cover-placeholder::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(to bottom,transparent 40%,rgba(26,10,46,0.8));
+    }
+    .genre-badge{
+      position:absolute;top:10px;right:10px;
+      background:rgba(26,10,46,0.8);
+      border:1px solid var(--border);
+      border-radius:50px;padding:3px 10px;
+      font-size:10px;font-weight:600;letter-spacing:.5px;
+      color:var(--gold);text-transform:uppercase;z-index:2;
+    }
+    .book-info{padding:16px;}
+    .book-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--page);margin-bottom:4px;line-height:1.3;}
+    .book-author{font-size:12px;color:rgba(255,248,240,0.45);margin-bottom:10px;}
+    .book-rating{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--gold);}
+ 
+    /* MODAL */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(10,5,20,0.85);
+      backdrop-filter:blur(8px);z-index:200;
+      display:flex;align-items:center;justify-content:center;
+      padding:20px;opacity:0;pointer-events:none;transition:opacity .3s;
+    }
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{
+      background:#1e1030;border:1px solid var(--border);border-radius:24px;
+      max-width:620px;width:100%;max-height:85vh;overflow-y:auto;
+      position:relative;transform:translateY(30px) scale(0.97);
+      transition:transform .35s cubic-bezier(.22,1,.36,1);
+      scrollbar-width:thin;scrollbar-color:var(--lavender) transparent;
+    }
+    .modal-overlay.open .modal{transform:translateY(0) scale(1);}
+    .modal-cover{
+      width:100%;height:220px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:72px;
+      background:linear-gradient(135deg,var(--lavender),var(--rose));
+      border-radius:24px 24px 0 0;position:relative;
+    }
+    .modal-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,#1e1030);border-radius:24px 24px 0 0;}
+    .modal-body{padding:28px 32px 36px;}
+    .modal-genre{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--page);margin-bottom:4px;line-height:1.2;}
+    .modal-author{font-size:14px;color:rgba(255,248,240,0.5);margin-bottom:6px;}
+    .modal-rating{font-size:14px;color:var(--gold);margin-bottom:20px;}
+    .modal-summary-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,248,240,0.35);margin-bottom:10px;}
+    .modal-summary{font-size:15px;line-height:1.75;color:rgba(255,248,240,0.75);}
+    .modal-actions{display:flex;gap:12px;margin-top:28px;}
+    .btn-download{
+      flex:1;padding:14px;border-radius:12px;border:none;
+      background:linear-gradient(135deg,var(--gold),var(--rose));
+      color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;
+      cursor:pointer;transition:transform .15s,box-shadow .2s;
+      box-shadow:0 6px 20px rgba(232,65,122,0.35);
+    }
+    .btn-download:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(232,65,122,0.5);}
+    .btn-close-modal{
+      padding:14px 20px;border-radius:12px;
+      border:1.5px solid var(--border);background:none;
+      color:var(--page);font-family:'Inter',sans-serif;font-size:14px;
+      cursor:pointer;transition:all .2s;
+    }
+    .btn-close-modal:hover{border-color:var(--rose);color:var(--rose);}
+    .close-x{
+      position:absolute;top:16px;right:16px;z-index:10;
+      background:rgba(26,10,46,0.7);border:1px solid var(--border);
+      border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--page);font-size:16px;transition:all .2s;
+    }
+    .close-x:hover{background:var(--rose);border-color:var(--rose);}
+ 
+    /* FOOTER COUNT */
+    .count-bar{text-align:center;padding:0 40px 20px;font-size:13px;color:rgba(255,248,240,0.3);}
+  </style>
+</head>
+<body>
+ 
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">📖</div>
+    <div class="nav-name">Book<span>Shelf</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-search">
+      <span>🔍</span>
+      <input type="text" id="searchInput" placeholder="Search books..."/>
+    </div>
+    <button class="btn-back" onclick="window.location.href='index.html'">← Sign Out</button>
+  </div>
+</nav>
+ 
+<!-- HERO -->
+<div class="hero">
+  <h1>Your <span>Library</span> Awaits</h1>
+  <p>Click any book to read the summary — download it to keep forever</p>
+</div>
+ 
+<!-- FILTERS -->
+<div class="filters" id="filters">
+  <button class="filter-btn active" onclick="filterBooks('All',this)">All Books</button>
+  <button class="filter-btn" onclick="filterBooks('Finance',this)">💰 Finance</button>
+  <button class="filter-btn" onclick="filterBooks('Psychology',this)">🧠 Psychology</button>
+  <button class="filter-btn" onclick="filterBooks('Self-Help',this)">🚀 Self-Help</button>
+  <button class="filter-btn" onclick="filterBooks('Business',this)">💼 Business</button>
+  <button class="filter-btn" onclick="filterBooks('Philosophy',this)">🌿 Philosophy</button>
+  <button class="filter-btn" onclick="filterBooks('Leadership',this)">👑 Leadership</button>
+</div>
+ 
+<!-- GRID -->
+<div class="grid" id="bookGrid"></div>
+<div class="count-bar" id="countBar"></div>
+ 
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="close-x" onclick="closeModal()">✕</button>
+    <div class="modal-cover" id="modalCover"></div>
+    <div class="modal-body">
+      <div class="modal-genre" id="modalGenre"></div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-author" id="modalAuthor"></div>
+      <div class="modal-rating" id="modalRating"></div>
+      <div class="modal-summary-label">Summary</div>
+      <div class="modal-summary" id="modalSummary"></div>
+      <div class="modal-actions">
+        <button class="btn-download" id="downloadBtn">⬇ Download Summary</button>
+        <button class="btn-close-modal" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+const BOOKS = [
+  { title:"The Psychology of Money", author:"Morgan Housel", genre:"Finance", emoji:"💰", rating:4.8, summary:"Morgan Housel explores how our emotions, biases, and personal history shape the way we think about money. Through 19 short stories, he argues that financial success is less about intelligence and more about behaviour. The book teaches that building wealth is not about earning more — it's about saving consistently, avoiding catastrophic mistakes, and giving time the chance to do its work through compounding." },
+  { title:"Rich Dad Poor Dad", author:"Robert T. Kiyosaki", genre:"Finance", emoji:"🏦", rating:4.7, summary:"Kiyosaki contrasts the financial philosophies of his two father figures — his educated but financially struggling biological father (Poor Dad) and his self-made millionaire friend's father (Rich Dad). The core lesson is that the wealthy don't work for money; they make money work for them by acquiring assets, understanding cash flow, and building financial literacy that is never taught in school." },
+  { title:"The Power of Now", author:"Eckhart Tolle", genre:"Philosophy", emoji:"🌿", rating:4.7, summary:"Tolle argues that the root of all human suffering is our inability to live in the present moment. Our minds are constantly pulled into the past (regret) or the future (anxiety). By learning to observe thoughts without identifying with them, and by anchoring awareness in the present, we can experience a deep sense of peace that is not dependent on external circumstances." },
+  { title:"Atomic Habits", author:"James Clear", genre:"Self-Help", emoji:"⚛️", rating:4.9, summary:"James Clear presents a practical framework for building good habits and breaking bad ones. The central idea is that tiny 1% improvements compound into remarkable results over time. He introduces the Four Laws of Behaviour Change — make it obvious, make it attractive, make it easy, make it satisfying — and shows how identity-based habits, not outcome-based goals, are the key to lasting change." },
+  { title:"Think and Grow Rich", author:"Napoleon Hill", genre:"Self-Help", emoji:"🧠", rating:4.6, summary:"Based on interviews with over 500 successful people including Andrew Carnegie and Henry Ford, Hill distils 13 principles of personal achievement. The book emphasises that a definite burning desire, combined with organised planning, faith, and persistent action, is the formula that separates those who accumulate wealth from those who do not. The mind, Hill argues, is the most powerful tool a person possesses." },
+  { title:"Sapiens", author:"Yuval Noah Harari", genre:"Philosophy", emoji:"🌍", rating:4.8, summary:"Harari traces the history of Homo sapiens from the Stone Age to the modern era, arguing that what sets humans apart is our unique ability to believe in shared fictions — money, nations, religions, laws. These collective myths allowed large-scale cooperation and drove civilisation forward. The book challenges readers to reconsider whether progress has actually made humans happier." },
+  { title:"How to Win Friends and Influence People", author:"Dale Carnegie", genre:"Psychology", emoji:"🤝", rating:4.7, summary:"Carnegie's timeless classic reveals the fundamental principles of human interaction. By genuinely showing interest in others, remembering names, listening deeply, and making people feel important, anyone can build meaningful relationships and influence others positively. The book demonstrates that the ability to deal with people is the most valuable skill a person can develop in both life and business." },
+  { title:"The Lean Startup", author:"Eric Ries", genre:"Business", emoji:"🚀", rating:4.5, summary:"Ries introduces a methodology for building businesses under conditions of extreme uncertainty. The core cycle — Build, Measure, Learn — encourages entrepreneurs to release minimum viable products quickly, gather real customer feedback, and pivot or persevere based on validated learning rather than assumptions. The book argues that speed of learning is the ultimate competitive advantage for any new venture." },
+  { title:"Good to Great", author:"Jim Collins", genre:"Leadership", emoji:"👑", rating:4.6, summary:"After studying 1,435 companies over 40 years, Collins identifies what makes certain companies transition from merely good performance to truly great results. Key findings include Level 5 Leadership (humble yet fierce leaders), the Hedgehog Concept (doing one thing better than anyone in the world), and a culture of discipline. Great companies do not rely on breakthrough technology alone — they rely on consistent, disciplined people making disciplined decisions." },
+  { title:"Zero to One", author:"Peter Thiel", genre:"Business", emoji:"1️⃣", rating:4.6, summary:"Thiel argues that real innovation means going from zero to one — creating something genuinely new — rather than copying what already exists (one to n). He challenges entrepreneurs to build monopolies through secrets that others have not discovered, to think boldly about the future, and to create businesses that will last. The most valuable companies solve unique problems that no one else is solving." },
+  { title:"The 7 Habits of Highly Effective People", author:"Stephen R. Covey", genre:"Self-Help", emoji:"✅", rating:4.7, summary:"Covey presents seven principles for living with fairness, integrity, honesty, and human dignity. Moving from dependence to independence to interdependence, the habits cover being proactive, beginning with the end in mind, putting first things first, thinking win-win, seeking first to understand, synergising with others, and continuously renewing oneself. Together they form a character-based approach to personal and professional effectiveness." },
+  { title:"Mindset", author:"Carol S. Dweck", genre:"Psychology", emoji:"🔑", rating:4.6, summary:"Dweck's research distinguishes between a fixed mindset (believing abilities are innate and unchangeable) and a growth mindset (believing abilities can be developed through dedication and hard work). People with a growth mindset embrace challenges, persist through setbacks, learn from criticism, and find inspiration in others' success. The book shows how this simple shift in thinking can transform achievement in school, sports, business, and relationships." },
+  { title:"The Intelligent Investor", author:"Benjamin Graham", genre:"Finance", emoji:"📈", rating:4.8, summary:"Considered the bible of value investing, Graham teaches investors to buy stocks as if buying pieces of a real business — with a margin of safety — rather than speculating on price movements. He introduces the allegorical Mr Market, an emotional business partner whose mood swings create buying opportunities for the disciplined investor. The book distinguishes between investing and speculation, and advocates patience over short-term thinking." },
+  { title:"Start With Why", author:"Simon Sinek", genre:"Leadership", emoji:"❓", rating:4.6, summary:"Sinek observes that inspiring leaders and organisations all think, act, and communicate from the inside out — starting with Why (purpose), then How (process), then What (result). Most companies communicate what they do, but people don't buy what you do; they buy why you do it. Apple, Martin Luther King Jr., and the Wright Brothers all succeeded because they were driven by a clear sense of purpose that others believed in." },
+  { title:"Outliers", author:"Malcolm Gladwell", genre:"Psychology", emoji:"⭐", rating:4.5, summary:"Gladwell challenges the myth of the self-made success story by showing that high achievers are products of their environment, timing, cultural legacy, and opportunities — not just personal talent. Through stories of Bill Gates, The Beatles, and Canadian hockey players, he introduces the 10,000-Hour Rule and argues that success is less about who we are and more about where we come from and what opportunities we are given." },
+  { title:"The 4-Hour Workweek", author:"Timothy Ferriss", genre:"Self-Help", emoji:"⏰", rating:4.4, summary:"Ferriss introduces the concept of lifestyle design — escaping the 9-to-5 grind not by retiring early but by creating a business that runs without you. Using the 80/20 principle, he advocates eliminating low-value tasks, automating income, and liberating yourself to live richly now rather than deferring life for retirement. The book provides a practical blueprint for building a business that gives you both money and time." },
+  { title:"Thinking, Fast and Slow", author:"Daniel Kahneman", genre:"Psychology", emoji:"⚡", rating:4.7, summary:"Nobel laureate Kahneman explores the two systems that drive human thought. System 1 is fast, intuitive, and emotional; System 2 is slow, deliberate, and logical. Most of our decisions are made by System 1, leaving us vulnerable to cognitive biases and errors. Understanding how these systems interact — and when to override our instincts with deliberate reasoning — is essential for making better decisions in all areas of life." },
+  { title:"Deep Work", author:"Cal Newport", genre:"Self-Help", emoji:"🎯", rating:4.7, summary:"Newport argues that the ability to focus without distraction on cognitively demanding tasks — what he calls deep work — is becoming increasingly rare and increasingly valuable. In an age of email, social media, and open offices, most people are trapped in shallow work. The book provides strategies for cultivating a deep work practice, including working in intense focused blocks, embracing boredom, and quitting social media deliberately." },
+  { title:"The Subtle Art of Not Giving a F*ck", author:"Mark Manson", genre:"Self-Help", emoji:"🎲", rating:4.5, summary:"Manson's counterintuitive approach to living a good life argues that improvement requires choosing what to care about carefully. Rather than relentlessly pursuing positivity, we should accept our limitations, embrace our struggles, and choose our values wisely. He argues that the desire to avoid pain and discomfort is itself the source of most human suffering, and that accepting responsibility for our problems — even when they are not our fault — is the only path forward." },
+  { title:"Essentialism", author:"Greg McKeown", genre:"Self-Help", emoji:"✂️", rating:4.6, summary:"McKeown advocates for the disciplined pursuit of less — doing fewer things at a higher level of quality rather than spreading yourself too thin. The essentialist mindset asks: what is absolutely essential? By eliminating the non-essential, we gain control over our choices and reclaim our time and energy for the things that truly matter. The book is a guide to saying no with grace, and to making the highest possible contribution with the time we have." },
+  { title:"Leaders Eat Last", author:"Simon Sinek", genre:"Leadership", emoji:"🛡️", rating:4.5, summary:"Sinek explores why some teams thrive and others fail, drawing on biology and military examples. He argues that great leaders create a Circle of Safety — an environment where people feel protected from external threats and internal politics. When employees feel safe and trusted, the body releases chemicals like oxytocin and serotonin that promote cooperation and loyalty. True leadership is about putting the well-being of your people above your own short-term interests." },
+  { title:"The Art of War", author:"Sun Tzu", genre:"Philosophy", emoji:"⚔️", rating:4.6, summary:"Written over 2,500 years ago, this ancient Chinese military treatise remains one of the most influential strategy texts ever written. Sun Tzu's core teaching is that the supreme art of war is to defeat the enemy without fighting — through superior knowledge, preparation, adaptability, and deception. Its principles have been applied far beyond the battlefield, to business strategy, negotiation, sports, and personal development." },
+  { title:"Grit", author:"Angela Duckworth", genre:"Psychology", emoji:"💪", rating:4.5, summary:"Duckworth's research shows that talent alone does not predict success — grit, defined as passion combined with perseverance for long-term goals, is a far better predictor of achievement. Through studies of West Point cadets, spelling bee champions, and salespeople, she demonstrates that the grittiest individuals are not those who work the hardest in short bursts, but those who sustain effort and interest over years and even decades." },
+  { title:"Ikigai", author:"Héctor García & Francesc Miralles", genre:"Philosophy", emoji:"🌸", rating:4.5, summary:"Drawing inspiration from the long-lived residents of Okinawa, Japan, the authors explore the Japanese concept of ikigai — the reason you get up in the morning. The book argues that a long, fulfilling life comes from finding the intersection of what you love, what you are good at, what the world needs, and what you can be paid for. Simple pleasures, community, movement, and purpose are more powerful than any diet or medical intervention." },
+  { title:"The Millionaire Next Door", author:"Thomas J. Stanley", genre:"Finance", emoji:"🏠", rating:4.5, summary:"Stanley's research reveals that most millionaires in America are not flashy spenders — they are ordinary people who live frugally, avoid status symbols, and invest consistently over long periods. The book challenges the assumption that wealthy people look wealthy, and shows that true financial independence comes from living below your means, building assets, and making financial independence a higher priority than social status." },
+  { title:"Never Split the Difference", author:"Chris Voss", genre:"Business", emoji:"🗣️", rating:4.8, summary:"Former FBI hostage negotiator Chris Voss reveals that the best negotiators do not split the difference — they use emotional intelligence, active listening, and tactical empathy to achieve their desired outcomes. Techniques like mirroring, labelling emotions, and asking calibrated questions help you understand what the other party truly wants and steer conversations toward agreements that leave both sides feeling heard and satisfied." },
+  { title:"Can't Hurt Me", author:"David Goggins", genre:"Self-Help", emoji:"🔥", rating:4.8, summary:"Goggins shares his extraordinary journey from an abused child to becoming a Navy SEAL, ultra-marathon runner, and world record holder. His central message is that most humans only use 40% of their capabilities. By embracing discomfort, silencing the mind's excuses, and building an unbreakable callus of mental toughness through repeated suffering and accountability, anyone can shatter their perceived limitations and achieve the extraordinary." },
+  { title:"The Alchemist", author:"Paulo Coelho", genre:"Philosophy", emoji:"✨", rating:4.7, summary:"Through the journey of a young Andalusian shepherd named Santiago, Coelho teaches that the universe conspires to help those who pursue their Personal Legend — their deepest desire and true purpose. The book is a meditation on listening to your heart, recognising opportunity, and understanding that the treasure we seek in the world often leads us back to where we started, but with new eyes. It is a timeless story about following your dreams." },
+  { title:"Influence", author:"Robert Cialdini", genre:"Psychology", emoji:"🧲", rating:4.7, summary:"Cialdini identifies six universal principles of influence — reciprocity, commitment, social proof, authority, liking, and scarcity — that determine how people are persuaded. Understanding these principles allows you both to protect yourself from manipulation and to apply them ethically in sales, marketing, and everyday communication. The book draws on decades of research and real-world examples to explain why people say yes and how to apply these insights responsibly." },
+  { title:"The One Thing", author:"Gary Keller", genre:"Business", emoji:"☝️", rating:4.5, summary:"Keller argues that extraordinary results are directly determined by how narrow you can make your focus. Rather than multitasking or maintaining long to-do lists, success comes from asking: 'What is the ONE thing I can do such that by doing it, everything else becomes easier or unnecessary?' By concentrating all energy on the single most important task each day, anyone can achieve results that most people consider impossible." },
+];
+ 
+let currentBook = null;
+ 
+function renderBooks(list) {
+  const grid = document.getElementById('bookGrid');
+  const countBar = document.getElementById('countBar');
+  grid.innerHTML = '';
+  list.forEach((book, i) => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.innerHTML = `
+      <div class="book-cover-placeholder" style="background:${coverGradient(i)}">
+        <span style="font-size:56px;z-index:1">${book.emoji}</span>
+        <span class="genre-badge">${book.genre}</span>
+      </div>
+      <div class="book-info">
+        <div class="book-title">${book.title}</div>
+        <div class="book-author">${book.author}</div>
+        <div class="book-rating">${'★'.repeat(Math.floor(book.rating))} ${book.rating}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => openModal(book, i));
+    grid.appendChild(card);
+  });
+  countBar.textContent = `Showing ${list.length} books`;
+}
+ 
+function coverGradient(i) {
+  const gradients = [
+    'linear-gradient(135deg,#9B59B6,#E8417A)',
+    'linear-gradient(135deg,#0ABFBC,#3498DB)',
+    'linear-gradient(135deg,#F5A623,#E8417A)',
+    'linear-gradient(135deg,#2ECC71,#0ABFBC)',
+    'linear-gradient(135deg,#E74C3C,#9B59B6)',
+    'linear-gradient(135deg,#3498DB,#9B59B6)',
+    'linear-gradient(135deg,#F5A623,#2ECC71)',
+  ];
+  return gradients[i % gradients.length];
+}
+ 
+function openModal(book, i) {
+  currentBook = book;
+  document.getElementById('modalCover').style.background = coverGradient(i);
+  document.getElementById('modalCover').innerHTML = `<span style="font-size:72px;z-index:1;position:relative">${book.emoji}</span>`;
+  document.getElementById('modalGenre').textContent = book.genre;
+  document.getElementById('modalTitle').textContent = book.title;
+  document.getElementById('modalAuthor').textContent = 'by ' + book.author;
+  document.getElementById('modalRating').textContent = '★'.repeat(Math.floor(book.rating)) + ' ' + book.rating + ' / 5';
+  document.getElementById('modalSummary').textContent = book.summary;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+ 
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentBook = null;
+}
+ 
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+ 
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+ 
+/* Download only the summary as a .txt file */
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!currentBook) return;
+  const content = `BOOKSHELF — SUMMARY\n${'='.repeat(50)}\n\nTitle  : ${currentBook.title}\nAuthor : ${currentBook.author}\nGenre  : ${currentBook.genre}\nRating : ${currentBook.rating} / 5\n\n${'─'.repeat(50)}\nSUMMARY\n${'─'.repeat(50)}\n\n${currentBook.summary}\n\n${'='.repeat(50)}\nDownloaded from BookShelf\n`;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentBook.title.replace(/[^a-z0-9]/gi,'_') + '_Summary.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+ 
+/* Filter */
+function filterBooks(genre, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = genre === 'All' ? BOOKS : BOOKS.filter(b => b.genre === genre);
+  renderBooks(filtered);
+}
+ 
+/* Search */
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const filtered = BOOKS.filter(b =>
+    b.title.toLowerCase().includes(q) ||
+    b.author.toLowerCase().includes(q) ||
+    b.genre.toLowerCase().includes(q)
+  );
+  renderBooks(filtered);
+});
+ 
+/* Initial render */
+renderBooks(BOOKS);
+</script>
+</body>
+</html>
